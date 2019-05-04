@@ -1,6 +1,1 @@
-<<<<<<< HEAD
 one=6
-a=A
-=======
-one=7
->>>>>>> parent of 1de5438... Merge pull request #13 from gprashant2/A-temp
