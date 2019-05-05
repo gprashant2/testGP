@@ -1,1 +1,1 @@
-fusion.server.base.domain=https://A1.bbbyapp.com
+fusion.server.base.domain=https://A.bbbyapp.com
