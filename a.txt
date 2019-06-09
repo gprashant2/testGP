@@ -1,2 +1,3 @@
 one=6
 spring.redis.host=redis-12000.dev01.rds.est4.bbby-app.com
+spring.redis.host1=redis-12000.dev01.rds.est4.bbby-app.com
