@@ -1,4 +1,4 @@
 one=6
-two=2
 
-spring.redis.host=redis-12000.dev01123.rds.est4.bbby-app.com
+spring.redis.host=redis-12000.sit01.rds.est4.bbby-app.com11
+
