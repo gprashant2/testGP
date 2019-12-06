@@ -3,7 +3,7 @@ one=6
 spring.redis.host=redis-12000.sit01.rds.est4.bbby-app.com11
 
 new
-ff1
+ff12
 dd1
 f
 
