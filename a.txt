@@ -5,7 +5,9 @@ spring.redis.host=redis-12000.sit01.rds.est4.bbby-app.com11
 new3
 ff12
 dd1
-f13
+<<<<<<< HEAD
+f12
+>>>>>>> A
 
 
 zxds
