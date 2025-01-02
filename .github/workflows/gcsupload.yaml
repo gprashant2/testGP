@@ -3,7 +3,7 @@ name: GCP Storage Upload
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   upload-to-gcs:
@@ -25,4 +25,4 @@ jobs:
 
     - name: Upload to GCS
       run: |
-        gsutil cp -r ./dist/* gs:// githubactions-exp-1/
+        gsutil cp -r ./dist/* gs://githubactions-exp-1/
