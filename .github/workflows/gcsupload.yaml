@@ -3,7 +3,7 @@ name: GCP Storage Upload
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   upload-to-gcs:
@@ -22,6 +22,12 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: "poc-070424"
+
+    - name: Build Project
+      run: |
+        # Replace with your actual build commands
+        mkdir -p dist
+        echo "Sample file" > dist/sample.txt
 
     - name: Upload to GCS
       run: |
