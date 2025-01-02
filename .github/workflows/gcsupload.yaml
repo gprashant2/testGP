@@ -3,7 +3,7 @@ name: GCP Storage Upload
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   upload-to-gcs:
@@ -26,6 +26,8 @@ jobs:
     - name: Build Project
       run: |
         # Replace with your actual build commands
+        pwd
+        ls -lrt
         mkdir -p dist
         echo "Sample file" > dist/sample.txt
 
