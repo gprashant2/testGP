@@ -19,6 +19,9 @@ jobs:
         service_account_key: ${{ secrets.GCP_KEY }}
         project_id: poc-070424
 
+    - name: Authenticate Docker with Artifact Registry
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev    
+
     - name: Build and push Docker image
       run: |
         IMAGE_TAG=us-central1-docker.pkg.dev/poc-070424/my-repo/my-app:$GITHUB_SHA
