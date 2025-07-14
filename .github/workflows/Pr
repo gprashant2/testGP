@@ -1,14 +1,14 @@
-name: hello worls workflow
+name: pr workflow
 
 on: 
   pull_request:
      branches:
-       - master
+       - main
 
 jobs:
    myjob1:
      runs-on: ubuntu-latest
 
      steps:
-     - name: print greeting
+     - name: print pr
        run: echo "pr"
