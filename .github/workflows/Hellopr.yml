@@ -2,7 +2,7 @@ name: hello worls workflow
 
 on: pull_request
      branches
-       - master
+       - main
 
 jobs:
    myjob1:
