@@ -1,7 +1,8 @@
 name: hello worls workflow
 
-on: pull_request
-     branches
+on: 
+  pull_request:
+     branches:
        - main
 
 jobs:
