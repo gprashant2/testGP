@@ -1,0 +1,14 @@
+name: hello worls workflow
+
+on: push
+     branches
+       - july14
+
+jobs:
+   myjob1:
+     runs-on: ubuntu-latest
+
+     steps:
+     - name: print greeting
+       run: echo "hiiii"
+     
