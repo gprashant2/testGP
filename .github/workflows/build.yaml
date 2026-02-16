@@ -1,4 +1,4 @@
-iname: Build and Auto Deploy Dev
+name: Build and Auto Deploy Dev
 
 on:
   push:
