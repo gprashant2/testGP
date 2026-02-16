@@ -2,6 +2,10 @@ name: Simple CI CD K3s Secure
 
 on:
   push:
+<<<<<<< HEAD
+=======
+    branches: [ master ]
+>>>>>>> b55ed4a98d53a2c0796424fcd5fe96de49558afe
 
 jobs:
   build-deploy:
