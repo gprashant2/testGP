@@ -12,6 +12,8 @@ spec:
       labels:
         app: simple-app
     spec:
+      imagePullSecrets:
+      - name: artifact-registry-creds
       containers:
       - name: simple-app
         image: us-central1-docker.pkg.dev/poc-070424/k3s-repo/simple-app:latest
