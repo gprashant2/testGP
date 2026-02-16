@@ -74,3 +74,9 @@ jobs:
       run: |
         export KUBECONFIG=$PWD/kubeconfig.yaml
         kubectl apply -f k8s/
+
+    # ⭐ NEW STEP (FORCE POD RESTART TO PULL NEW IMAGE)
+    - name: Force Rollout Restart
+      run: |
+        export KUBECONFIG=$PWD/kubeconfig.yaml
+        kubectl rollout restart deployment simple-app
