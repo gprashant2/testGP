@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: REPLACE_IMAGE
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: NodePort
+  port: 80
+
+namespace: default

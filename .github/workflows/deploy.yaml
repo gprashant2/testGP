@@ -1,0 +1,34 @@
+name: Helm Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        required: true
+      environment:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/setup-kubectl@v4
+
+    - name: Install Helm
+      uses: azure/setup-helm@v4
+
+    - name: Deploy via Helm
+      run: |
+        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=$PWD/kubeconfig.yaml
+
+        IMAGE=${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app
+
+        helm upgrade --install simple-app ./helm/simple-app \
+        -f helm/simple-app/values-${{ github.event.inputs.environment }}.yaml \
+        --set image.repository=$IMAGE \
+        --set image.tag=${{ github.event.inputs.image_tag }}
+
