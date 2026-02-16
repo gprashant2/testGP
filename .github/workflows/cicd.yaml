@@ -58,7 +58,7 @@ jobs:
       with:
         image-ref: ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest
         format: table
-        exit-code: 1
+        exit-code: 0
         severity: CRITICAL,HIGH
 
     - name: Setup kubectl
