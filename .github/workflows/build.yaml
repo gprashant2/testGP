@@ -1,30 +1,127 @@
-name: Build Image
+iname: Build and Auto Deploy Dev
 
 on:
   push:
-    branches: [ master,dev ]
+    branches:
+      - main
+      - dev
 
 jobs:
+
+# ===================================
+# BUILD JOB (RUNS FOR MAIN + DEV)
+# ===================================
   build:
     runs-on: self-hosted
 
-    steps:
-    - uses: actions/checkout@v4
+    outputs:
+      image_tag: ${{ steps.set_tag.outputs.tag }}
 
-    - uses: google-github-actions/auth@v2
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # -----------------------------
+    # Secret Scan
+    # -----------------------------
+    - name: Gitleaks Scan
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # -----------------------------
+    # Dependency Scan
+    # -----------------------------
+    - name: Trivy FS Scan
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        scan-type: fs
+        exit-code: 1
+        severity: CRITICAL,HIGH
+
+    # -----------------------------
+    # GCP Auth
+    # -----------------------------
+    - name: Auth GCP
+      uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - uses: google-github-actions/setup-gcloud@v2
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
 
-    - run: gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
+    - name: Set Project
+      run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Build & Push
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
+
+    # -----------------------------
+    # SET IMAGE TAG
+    # -----------------------------
+    - name: Set Image Tag
+      id: set_tag
       run: |
         TAG=${{ github.run_number }}
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-        docker build -t \
-        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:$TAG ./app
+    # -----------------------------
+    # BUILD IMAGE
+    # -----------------------------
+    - name: Build Docker Image
+      run: |
+        docker build --no-cache -t \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:${{ steps.set_tag.outputs.tag }} \
+        ./app
 
+    # -----------------------------
+    # IMAGE SECURITY SCAN
+    # -----------------------------
+    - name: Trivy Image Scan
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        image-ref: ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:${{ steps.set_tag.outputs.tag }}
+        format: table
+        exit-code: 0
+        severity: CRITICAL,HIGH
+
+    # -----------------------------
+    # PUSH IMAGE
+    # -----------------------------
+    - name: Push Image
+      run: |
         docker push \
-        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:$TAG
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:${{ steps.set_tag.outputs.tag }}
+
+# ===================================
+# AUTO DEV DEPLOY (ONLY DEV BRANCH)
+# ===================================
+  deploy-dev:
+    needs: build
+    runs-on: self-hosted
+    environment: dev
+    if: github.ref == 'refs/heads/dev'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v4
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v4
+
+    - name: Deploy DEV via Helm
+      run: |
+        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=$PWD/kubeconfig.yaml
+
+        IMAGE=${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app
+
+        helm upgrade --install simple-app ./helm/simple-app \
+        -f helm/simple-app/values-dev.yaml \
+        --set image.repository=$IMAGE \
+        --set image.tag=${{ needs.build.outputs.image_tag }}
+
