@@ -1,81 +1,66 @@
 name: CI CD K3s Multi Env
-
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, dev ]
 
 jobs:
-
-# ---------------------
-# BUILD + SCAN
-# ---------------------
   build:
     runs-on: self-hosted
-
     steps:
     - uses: actions/checkout@v4
-
     - uses: gitleaks/gitleaks-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - uses: aquasecurity/trivy-action@0.20.0
       with:
         scan-type: fs
         exit-code: 1
         severity: CRITICAL,HIGH
-
     - uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
-
     - uses: google-github-actions/setup-gcloud@v2
-
     - run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-
-    - run: |
-        gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
-
-    - name: Build
+    - run: gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
+    
+    - name: Build (Dev)
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        docker build --no-cache -t \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev ./app
+        docker push \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev
+    
+    - name: Build (Prod)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       run: |
         docker build --no-cache -t \
         ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest ./app
-
-    - name: Push
-      run: |
         docker push \
         ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest
 
-
-# ---------------------
-# DEV DEPLOY (AUTO)
-# ---------------------
   deploy-dev:
     needs: build
     runs-on: self-hosted
     environment: dev
-
+    if: github.ref == 'refs/heads/dev'
     steps:
+    - uses: actions/checkout@v4
     - uses: azure/setup-kubectl@v4
-
     - run: |
         echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
         export KUBECONFIG=$PWD/kubeconfig.yaml
         kubectl apply -f k8s/dev/
         kubectl rollout restart deployment simple-app -n dev
 
-
-# ---------------------
-# PROD DEPLOY (MANUAL APPROVAL)
-# ---------------------
   deploy-prod:
-    needs: deploy-dev
+    needs: build
     runs-on: self-hosted
-    environment: prod   # 👈 THIS TRIGGERS APPROVAL
-
+    environment: prod
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
+    - uses: actions/checkout@v4
     - uses: azure/setup-kubectl@v4
-
     - run: |
         echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
         export KUBECONFIG=$PWD/kubeconfig.yaml
