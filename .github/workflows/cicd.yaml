@@ -2,7 +2,7 @@ name: Simple CI CD K3s
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build-deploy:
