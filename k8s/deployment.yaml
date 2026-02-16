@@ -16,6 +16,6 @@ spec:
       - name: gar-secret
       containers:
       - name: simple-app
-        image: us-central1-docker.pkg.dev/poc-070424/k3s-repo/simple-app:latest
+        image: us-central1-docker.pkg.dev/poc-070424/k3s-repo/simple-app:${{ github.run_number }}
         ports:
         - containerPort: 8080
