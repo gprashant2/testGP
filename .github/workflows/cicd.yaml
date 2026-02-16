@@ -1,0 +1,60 @@
+name: Simple CI CD K3s
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Authenticate to GCP
+    - name: Auth GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    # Setup gcloud
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
+
+    # Configure Docker for GAR
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
+
+    # Build Image
+    - name: Build Image
+      run: |
+        docker build -t \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest \
+        ./app
+
+    # Push Image
+    - name: Push Image
+      run: |
+        docker push \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest
+
+    # Setup kubectl
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v4
+
+    # Configure kubeconfig
+    - name: Setup kubeconfig
+      run: |
+        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=$PWD/kubeconfig.yaml
+        kubectl get nodes
+
+    # Deploy
+    - name: Deploy to K3s
+      run: |
+        export KUBECONFIG=$PWD/kubeconfig.yaml
+        kubectl apply -f k8s/
+
