@@ -8,53 +8,48 @@ commit = os.getenv("GITHUB_SHA", "unknown")[:7]
 repo = os.getenv("GITHUB_REPOSITORY", "unknown")
 actor = os.getenv("GITHUB_ACTOR", "unknown")
 
-prompt = f"""
-Write a final DevOps deployment report using ONLY the facts below.
+ai_prompt = f"""
+Write 3-4 professional sentences describing a DevOps deployment.
 
-FACTS:
+Facts:
 Environment: {branch}
-Branch: {branch}
-Commit: {commit}
 Repository: {repo}
-Triggered By: {actor}
 
-Write the final report directly.
-Do NOT write instructions.
-Do NOT leave placeholders.
-
-Format exactly like this:
-
-Environment: {branch}
-Branch: {branch}
-Commit: {commit}
-Repository: {repo}
-Triggered By: {actor}
-
-Deployment Details:
-Docker image built and pushed to registry.
-Helm deployment executed.
-Kubernetes rollout restarted.
-
-Risk Notes:
-No deployment risks reported.
-
-Final Status:
-Deployment completed successfully.
+Do not repeat facts.
+Do not add fake risks.
+Keep factual and professional.
 """
 
 response = requests.post(
     OLLAMA_URL,
     json={
         "model": "tinyllama",
-        "prompt": prompt,
+        "prompt": ai_prompt,
         "stream": False,
         "options": {
-            "temperature": 0.2,
-            "num_predict": 160
+            "temperature": 0.3,
+            "num_predict": 120
         }
     },
-    timeout=90
+    timeout=60
 )
 
+ai_text = response.json()["response"]
+
 print("\n===== DETAILED AI RELEASE SUMMARY =====\n")
-print(response.json()["response"])
+
+# ⭐ Deterministic (Correct Spelling Guaranteed)
+print(f"Environment: {branch}")
+print(f"Branch: {branch}")
+print(f"Commit: {commit}")
+print(f"Repository: {repo}")
+print(f"Triggered By: {actor}")
+
+print("\nDeployment Summary:")
+print(ai_text)
+
+print("\nRisk Notes:")
+print("No deployment risks reported.")
+
+print("\nFinal Status:")
+print("Deployment completed successfully.")
