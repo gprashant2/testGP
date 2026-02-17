@@ -82,6 +82,9 @@ jobs:
           --namespace dev \
           --create-namespace
 
+        kubectl rollout restart deployment simple-app -n dev
+  
+
 
   # ================= DEPLOY PROD =================
   deploy-prod:
@@ -109,3 +112,6 @@ jobs:
           -f ./helm/simple-app/values-prod.yaml \
           --namespace prod \
           --create-namespace
+
+        kubectl rollout restart deployment simple-app -n prod
+  
