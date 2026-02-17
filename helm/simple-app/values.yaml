@@ -1,0 +1,14 @@
+replicaCount: 1
+
+image:
+  repository: us-central1-docker.pkg.dev/poc-070424/k3s-repo/simple-app
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - gar-secret
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8080

@@ -1,0 +1,9 @@
+namespace: dev
+
+replicaCount: 1
+
+image:
+  tag: dev
+
+service:
+  nodePort: 30008

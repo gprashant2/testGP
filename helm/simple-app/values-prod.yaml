@@ -1,0 +1,9 @@
+namespace: prod
+
+replicaCount: 3
+
+image:
+  tag: prod
+
+service:
+  nodePort: 30009
