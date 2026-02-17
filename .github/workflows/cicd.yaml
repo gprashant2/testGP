@@ -14,7 +14,6 @@ jobs:
             tag: dev
           - branch: prod
             tag: prod
-    if: github.ref == format('refs/heads/{0}', matrix.branch)
     outputs:
       image: ${{ steps.build.outputs.image }}
     steps:
@@ -35,6 +34,7 @@ jobs:
     - run: gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
     - name: Build and Push (${{ matrix.tag }})
       id: build
+      if: github.ref == format('refs/heads/{0}', matrix.branch)
       run: |
         IMAGE="${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:${{ matrix.tag }}-${{ github.sha }}"
         docker build --no-cache -t $IMAGE ./app
