@@ -49,10 +49,10 @@ jobs:
       if: github.ref == 'refs/heads/prod'
       run: |
         docker build --no-cache -t \
-        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest ./app
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod ./app
 
         docker push \
-        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:latest
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod
 
 
   # ================= DEPLOY DEV =================
