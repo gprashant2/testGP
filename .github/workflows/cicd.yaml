@@ -27,9 +27,9 @@ jobs:
         severity: CRITICAL,HIGH
 
     - name: Local AI Security Summary
-       run: |
-          pip install requests
-          python scripts/local_ai_summary.py
+      run: |
+        pip install requests
+        python scripts/local_ai_summary.py
     
 
     - uses: google-github-actions/auth@v2
