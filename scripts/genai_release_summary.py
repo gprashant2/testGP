@@ -9,21 +9,17 @@ repo = os.getenv("GITHUB_REPOSITORY", "unknown")
 actor = os.getenv("GITHUB_ACTOR", "unknown")
 
 prompt = f"""
-You are a DevOps deployment reporter.
-
-Use ONLY provided facts.
-Do NOT invent release notes.
-Do NOT guess risk.
-If data missing → say NOT PROVIDED.
+Fill the deployment report template below using ONLY the provided facts.
+Do NOT rewrite instructions.
 
 FACTS:
-Repository: {repo}
 Environment: {branch}
 Branch: {branch}
 Commit: {commit}
+Repository: {repo}
 Triggered By: {actor}
 
-Output STRICT format:
+REPORT TEMPLATE:
 
 Environment:
 Branch:
@@ -51,7 +47,7 @@ response = requests.post(
         "stream": False,
         "options": {
             "temperature": 0.2,
-            "num_predict": 220
+            "num_predict": 180
         }
     },
     timeout=90
