@@ -114,4 +114,10 @@ jobs:
           --create-namespace
 
         kubectl rollout restart deployment simple-app -n prod
+    
+    - name: AI Deployment Summary
+      run: |
+        python3 -m pip install requests || true
+        python3 scripts/genai_release_summary.py || true
+    
   

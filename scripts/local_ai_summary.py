@@ -1,44 +1,48 @@
 import requests
+import os
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 
-def summarize(text):
-    response = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": "llama3",
-            "prompt": f"""
-You are a senior DevSecOps security expert.
+branch = os.getenv("GITHUB_REF_NAME", "unknown")
+commit = os.getenv("GITHUB_SHA", "unknown")[:7]
 
-Analyze scan result and produce structured table.
+prompt = f"""
+You are a senior DevOps release engineer.
 
-Output STRICT:
+Generate a DETAILED deployment summary.
 
-| Risk Level | Component | Issue | Fix |
-|------------|-----------|-------|-----|
-| <value> | <value> | <value> | <value> |
+Environment: {branch}
+Branch: {branch}
+Commit: {commit}
 
-Rules:
-- Use only scan data
-- No extra explanation
+Include sections:
 
-Scan Data:
-{text}
-""",
-            "stream": False,
-            "options": {
-                "temperature": 0.1
-            }
-        },
-        timeout=300
-    )
+Environment:
+Branch:
+Commit:
 
-    return response.json()["response"]
+Release Changes:
+Deployment Details:
+Risk Notes:
+Final Status:
 
+Write detailed but concise professional release notes.
+"""
 
-with open("trivy.txt") as f:
-    scan_data = f.read()
+response = requests.post(
+    OLLAMA_URL,
+    json={
+        "model": "tinyllama",
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.4,
+            "num_predict": 220
+        }
+    },
+    timeout=90
+)
 
-print("\n===== LLAMA3 SECURITY SUMMARY =====\n")
-print(summarize(scan_data))
+print("\n===== DETAILED AI RELEASE SUMMARY =====\n")
+print(response.json()["response"])
 
