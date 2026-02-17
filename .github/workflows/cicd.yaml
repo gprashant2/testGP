@@ -28,8 +28,8 @@ jobs:
 
     - name: Local AI Security Summary
       run: |
-        pip install requests
-        python scripts/local_ai_summary.py
+        python3 -m pip install requests
+        python3 scripts/local_ai_summary.py
     
 
     - uses: google-github-actions/auth@v2

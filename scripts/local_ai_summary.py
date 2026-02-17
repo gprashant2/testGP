@@ -6,39 +6,39 @@ def summarize(text):
     response = requests.post(
         OLLAMA_URL,
         json={
-            "model": "tinyllama",
+            "model": "llama3",
             "prompt": f"""
-You are a DevSecOps engineer.
+You are a senior DevSecOps security expert.
 
-Summarize this security scan result in 3 bullet points:
-- Risk Level
-- Main Issue
-- Suggested Fix
+Analyze scan result and produce structured table.
 
-Scan Result:
+Output STRICT:
+
+| Risk Level | Component | Issue | Fix |
+|------------|-----------|-------|-----|
+| <value> | <value> | <value> | <value> |
+
+Rules:
+- Use only scan data
+- No extra explanation
+
+Scan Data:
 {text}
 """,
-            "stream": False
+            "stream": False,
+            "options": {
+                "temperature": 0.1
+            }
         },
-        timeout=120
+        timeout=300
     )
 
     return response.json()["response"]
 
 
-def main():
-    try:
-        with open("trivy.txt") as f:
-            scan_data = f.read()
+with open("trivy.txt") as f:
+    scan_data = f.read()
 
-        summary = summarize(scan_data)
+print("\n===== LLAMA3 SECURITY SUMMARY =====\n")
+print(summarize(scan_data))
 
-        print("\n===== LOCAL AI SECURITY SUMMARY =====\n")
-        print(summary)
-
-    except Exception as e:
-        print("AI summary failed:", e)
-
-
-if __name__ == "__main__":
-    main()
