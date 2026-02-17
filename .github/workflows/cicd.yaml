@@ -8,30 +8,22 @@ jobs:
 
   build:
     runs-on: self-hosted
+
     steps:
 
+    # ---------------- CHECKOUT ----------------
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
+
+    # ---------------- GITLEAKS ----------------
     - uses: gitleaks/gitleaks-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: aquasecurity/trivy-action@0.20.0
-      with:
-        scan-type: fs
-        format: table
-        output: trivy.txt
-        exit-code: 0
-        severity: CRITICAL,HIGH
 
-    - name: Local AI Security Summary
-      run: |
-        python3 -m pip install requests
-        python3 scripts/local_ai_summary.py
-    
-
+    # ---------------- GCP AUTH ----------------
     - uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
@@ -43,26 +35,71 @@ jobs:
     - run: gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
 
 
-    # ---------------- BUILD DEV ----------------
-    - name: Build (Dev)
+    # ---------------- BUILD DEV IMAGE ----------------
+    - name: Build Image (Dev)
       if: github.ref == 'refs/heads/dev'
       run: |
         docker build --no-cache -t \
         ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev ./app
 
-        docker push \
-        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev
 
-
-    # ---------------- BUILD PROD ----------------
-    - name: Build (Prod)
+    # ---------------- BUILD PROD IMAGE ----------------
+    - name: Build Image (Prod)
       if: github.ref == 'refs/heads/prod'
       run: |
         docker build --no-cache -t \
         ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod ./app
 
+
+    # ---------------- TRIVY IMAGE SCAN DEV ----------------
+    - name: Trivy Image Scan (Dev)
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        trivy image \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev \
+        --severity CRITICAL,HIGH > trivy.txt
+
+
+    # ---------------- TRIVY IMAGE SCAN PROD ----------------
+    - name: Trivy Image Scan (Prod)
+      if: github.ref == 'refs/heads/prod'
+      run: |
+        trivy image \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod \
+        --severity CRITICAL,HIGH > trivy.txt
+
+
+    # ---------------- DEBUG (OPTIONAL REMOVE LATER) ----------------
+    - name: Debug Trivy Output
+      run: |
+        echo "===== TRIVY FILE SIZE ====="
+        wc -c trivy.txt || true
+        echo "===== TRIVY SAMPLE ====="
+        head -20 trivy.txt || true
+
+
+    # ---------------- LOCAL AI SUMMARY ----------------
+    - name: Local AI Security Summary
+      run: |
+        python3 -m pip install requests || true
+        python3 scripts/local_ai_summary.py || true
+
+
+    # ---------------- PUSH DEV IMAGE ----------------
+    - name: Push Image (Dev)
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        docker push \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev
+
+
+    # ---------------- PUSH PROD IMAGE ----------------
+    - name: Push Image (Prod)
+      if: github.ref == 'refs/heads/prod'
+      run: |
         docker push \
         ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod
+
 
 
   # ================= DEPLOY DEV =================
@@ -76,7 +113,6 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    # Install Helm (NEW - Minimal Add)
     - name: Setup Helm
       uses: azure/setup-helm@v4
 
@@ -93,7 +129,7 @@ jobs:
           --create-namespace
 
         kubectl rollout restart deployment simple-app -n dev
-  
+
 
 
   # ================= DEPLOY PROD =================
@@ -107,7 +143,6 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    # Install Helm (NEW - Minimal Add)
     - name: Setup Helm
       uses: azure/setup-helm@v4
 
@@ -124,4 +159,4 @@ jobs:
           --create-namespace
 
         kubectl rollout restart deployment simple-app -n prod
-  
+
