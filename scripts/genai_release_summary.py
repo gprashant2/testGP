@@ -9,8 +9,7 @@ repo = os.getenv("GITHUB_REPOSITORY", "unknown")
 actor = os.getenv("GITHUB_ACTOR", "unknown")
 
 prompt = f"""
-Fill the deployment report template below using ONLY the provided facts.
-Do NOT rewrite instructions.
+Write a final DevOps deployment report using ONLY the facts below.
 
 FACTS:
 Environment: {branch}
@@ -19,13 +18,17 @@ Commit: {commit}
 Repository: {repo}
 Triggered By: {actor}
 
-REPORT TEMPLATE:
+Write the final report directly.
+Do NOT write instructions.
+Do NOT leave placeholders.
 
-Environment:
-Branch:
-Commit:
-Repository:
-Triggered By:
+Format exactly like this:
+
+Environment: {branch}
+Branch: {branch}
+Commit: {commit}
+Repository: {repo}
+Triggered By: {actor}
 
 Deployment Details:
 Docker image built and pushed to registry.
@@ -33,7 +36,7 @@ Helm deployment executed.
 Kubernetes rollout restarted.
 
 Risk Notes:
-NOT PROVIDED
+No deployment risks reported.
 
 Final Status:
 Deployment completed successfully.
@@ -47,7 +50,7 @@ response = requests.post(
         "stream": False,
         "options": {
             "temperature": 0.2,
-            "num_predict": 180
+            "num_predict": 160
         }
     },
     timeout=90
@@ -55,4 +58,3 @@ response = requests.post(
 
 print("\n===== DETAILED AI RELEASE SUMMARY =====\n")
 print(response.json()["response"])
-
