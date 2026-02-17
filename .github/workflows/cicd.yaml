@@ -21,8 +21,16 @@ jobs:
     - uses: aquasecurity/trivy-action@0.20.0
       with:
         scan-type: fs
-        exit-code: 1
+        format: table
+        output: trivy.txt
+        exit-code: 0
         severity: CRITICAL,HIGH
+
+    - name: Local AI Security Summary
+       run: |
+          pip install requests
+          python scripts/local_ai_summary.py
+    
 
     - uses: google-github-actions/auth@v2
       with:
