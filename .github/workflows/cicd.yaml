@@ -117,8 +117,10 @@ jobs:
     
 
   ai-summary:
-    needs: [deploy-dev, deploy-prod]
+    needs: build
     runs-on: self-hosted
+
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/prod'
 
     steps:
     - uses: actions/checkout@v4
@@ -127,5 +129,6 @@ jobs:
       run: |
         python3 -m pip install requests || true
         python3 scripts/genai_release_summary.py || true
+
   
   
