@@ -9,15 +9,19 @@ repo = os.getenv("GITHUB_REPOSITORY", "unknown")
 actor = os.getenv("GITHUB_ACTOR", "unknown")
 
 ai_prompt = f"""
-Write 3-4 professional sentences describing a DevOps deployment.
+Write 3 professional sentences describing THIS deployment event.
 
-Facts:
-Environment: {branch}
-Repository: {repo}
+This is NOT a DevOps explanation.
+Do NOT list deployment steps.
+Do NOT explain DevOps concepts.
+Do NOT write generic theory.
 
-Do not repeat facts.
-Do not add fake risks.
-Keep factual and professional.
+Context:
+Container image built and pushed to registry.
+Helm deployed application to Kubernetes namespace {branch}.
+Rollout restart executed successfully.
+
+Write only deployment summary text.
 """
 
 response = requests.post(
@@ -27,8 +31,8 @@ response = requests.post(
         "prompt": ai_prompt,
         "stream": False,
         "options": {
-            "temperature": 0.3,
-            "num_predict": 120
+            "temperature": 0.2,
+            "num_predict": 100
         }
     },
     timeout=60
@@ -38,7 +42,6 @@ ai_text = response.json()["response"]
 
 print("\n===== DETAILED AI RELEASE SUMMARY =====\n")
 
-# ⭐ Deterministic (Correct Spelling Guaranteed)
 print(f"Environment: {branch}")
 print(f"Branch: {branch}")
 print(f"Commit: {commit}")
