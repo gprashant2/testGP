@@ -5,41 +5,55 @@ on:
     branches: [ prod, dev ]
 
 jobs:
+
   build:
     runs-on: self-hosted
-    strategy:
-      matrix:
-        include:
-          - branch: dev
-            tag: dev
-          - branch: prod
-            tag: prod
-    outputs:
-      image: ${{ steps.build.outputs.image }}
     steps:
+
     - uses: actions/checkout@v4
+
     - uses: gitleaks/gitleaks-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - uses: aquasecurity/trivy-action@0.20.0
       with:
         scan-type: fs
         exit-code: 1
         severity: CRITICAL,HIGH
+
     - uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
+
     - uses: google-github-actions/setup-gcloud@v2
+
     - run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
     - run: gcloud auth configure-docker ${{ secrets.GAR_REGION }}-docker.pkg.dev
-    - name: Build and Push (${{ matrix.tag }})
-      id: build
-      if: github.ref == format('refs/heads/{0}', matrix.branch)
+
+
+    # ---------------- BUILD DEV ----------------
+    - name: Build (Dev)
+      if: github.ref == 'refs/heads/dev'
       run: |
-        IMAGE="${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:${{ matrix.tag }}-${{ github.sha }}"
-        docker build --no-cache -t $IMAGE ./app
-        docker push $IMAGE
-        echo "image=$IMAGE" >> $GITHUB_OUTPUT
+        docker build --no-cache -t \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev ./app
+
+        docker push \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:dev
+
+
+    # ---------------- BUILD PROD ----------------
+    - name: Build (Prod)
+      if: github.ref == 'refs/heads/prod'
+      run: |
+        docker build --no-cache -t \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod ./app
+
+        docker push \
+        ${{ secrets.GAR_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPO }}/simple-app:prod
+
 
   # ================= DEPLOY DEV =================
   deploy-dev:
@@ -47,21 +61,30 @@ jobs:
     runs-on: self-hosted
     environment: dev
     if: github.ref == 'refs/heads/dev'
+
     steps:
+
     - uses: actions/checkout@v4
+
+    # Install Helm (NEW - Minimal Add)
     - name: Setup Helm
       uses: azure/setup-helm@v4
+
     - uses: azure/setup-kubectl@v4
+
     - name: Deploy DEV via Helm
       run: |
         echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
         export KUBECONFIG=$PWD/kubeconfig.yaml
+
         helm upgrade --install simple-app ./helm/simple-app \
           -f ./helm/simple-app/values-dev.yaml \
           --namespace dev \
-          --create-namespace \
-          --set image.tag=${{ needs.build.outputs.image }}
+          --create-namespace
+
         kubectl rollout restart deployment simple-app -n dev
+  
+
 
   # ================= DEPLOY PROD =================
   deploy-prod:
@@ -69,18 +92,26 @@ jobs:
     runs-on: self-hosted
     environment: prod
     if: github.ref == 'refs/heads/prod'
+
     steps:
+
     - uses: actions/checkout@v4
+
+    # Install Helm (NEW - Minimal Add)
     - name: Setup Helm
       uses: azure/setup-helm@v4
+
     - uses: azure/setup-kubectl@v4
+
     - name: Deploy PROD via Helm
       run: |
         echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
         export KUBECONFIG=$PWD/kubeconfig.yaml
+
         helm upgrade --install simple-app ./helm/simple-app \
           -f ./helm/simple-app/values-prod.yaml \
           --namespace prod \
-          --create-namespace \
-          --set image.tag=${{ needs.build.outputs.image }}
+          --create-namespace
+
         kubectl rollout restart deployment simple-app -n prod
+  
