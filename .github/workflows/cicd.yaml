@@ -114,4 +114,18 @@ jobs:
           --create-namespace
 
         kubectl rollout restart deployment simple-app -n prod
-  
+    
+
+  ai-summary:
+    needs: build
+    runs-on: self-hosted
+
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/prod'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: AI Deployment Summary
+      run: |
+        python3 -m pip install requests || true
+        python3 scripts/genai_release_summary.py || true
