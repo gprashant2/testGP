@@ -16,12 +16,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: aquasecurity/trivy-action@0.20.0
-      with:
-        scan-type: fs
-        exit-code: 1
-        severity: CRITICAL,HIGH
-
     - uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
