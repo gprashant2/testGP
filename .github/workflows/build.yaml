@@ -33,7 +33,7 @@ jobs:
     # Dependency Scan
     # -----------------------------
     - name: Trivy FS Scan
-      uses: aquasecurity/trivy-action@0.20.0
+      uses: aquasecurity/trivy-action@v0.28.0
       with:
         scan-type: fs
         exit-code: 1
